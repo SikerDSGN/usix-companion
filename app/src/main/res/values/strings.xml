@@ -1,4 +1,5 @@
 <resources>
-    <string name="app_name">usix companion</string>
-    <string name="accessibility_desc">usix 에이전트가 알림 없이도 메일·대화 화면을 읽고 탭·입력·스크롤하도록 허용합니다. 화면 잠금을 풀어야 하며, 루프백 브리지에서 토큰이 맞는 요청만 처리합니다.</string>
+    <string name="app_name">USIX Companion CZ</string>
+    <string name="accessibility_desc">Umožní lokálnímu agentovi USIX číst prvky na obrazovce, klepat, psát a posouvat obsah. Telefon musí být odemčený. Bridge přijímá chráněné požadavky pouze přes lokální rozhraní zařízení.</string>
+    <!-- CZ build trigger -->
 </resources>
