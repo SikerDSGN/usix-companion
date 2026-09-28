@@ -17,7 +17,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 
-/** 상태 표시 + '알림 접근'/'접근성' 설정 바로가기 + 브리지 토큰 복사만 있는 최소 화면. */
+/** Česká obrazovka stavu, oprávnění a párovacího tokenu. */
 class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var tokenView: TextView
@@ -30,7 +30,7 @@ class MainActivity : Activity() {
             setPadding(48, 96, 48, 48)
         }
         val title = TextView(this).apply {
-            text = "usix companion"
+            text = "USIX Companion CZ"
             textSize = 22f
         }
         status = TextView(this).apply {
@@ -38,24 +38,24 @@ class MainActivity : Activity() {
             setPadding(0, 32, 0, 32)
         }
         val settingsBtn = Button(this).apply {
-            text = "알림 접근 권한 설정 열기"
+            text = "Nastavit přístup k oznámením"
             setOnClickListener {
                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
             }
         }
         val accessBtn = Button(this).apply {
-            text = "접근성(화면 제어) 설정 열기"
+            text = "Nastavit ovládání obrazovky (Accessibility)"
             setOnClickListener {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             }
         }
         val mailHelp = TextView(this).apply {
-            text = "알림이 없어도 Thunderbird 메일·대화 화면을 읽고 입력할 수 있습니다. 화면 잠금을 풀고 접근성을 켜세요. 메일 계정은 Thunderbird에 등록하세요."
+            text = "Accessibility dovolí USIXu číst prvky na obrazovce, klepat, psát a posouvat obsah. Telefon musí být odemčený. Přístup k oznámením dovolí číst a obsluhovat podporovaná oznámení."
             textSize = 13f
             setPadding(0, 16, 0, 16)
         }
         val tokenLabel = TextView(this).apply {
-            text = "브리지 토큰 — 복사한 뒤 Termux 에서 `usix-termux pair`"
+            text = "Párovací token bridge. Zkopíruj ho a potom v Termuxu spusť: usix-termux pair"
             textSize = 13f
             setPadding(0, 40, 0, 8)
         }
@@ -65,15 +65,15 @@ class MainActivity : Activity() {
             setTextIsSelectable(true)
         }
         val copyBtn = Button(this).apply {
-            text = "토큰 복사"
+            text = "Kopírovat párovací token"
             setOnClickListener { copyToken() }
         }
         val regenBtn = Button(this).apply {
-            text = "토큰 재생성 (Termux 재-pair 필요)"
+            text = "Vygenerovat nový token (vyžaduje nové párování)"
             setOnClickListener {
                 BridgeAuth.regenerate(this@MainActivity)
                 refresh()
-                Toast.makeText(this@MainActivity, "새 토큰 생성됨 — 다시 복사해 pair 하세요", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, "Nový token vytvořen. Zkopíruj ho a znovu proveď párování v Termuxu.", Toast.LENGTH_SHORT).show()
             }
         }
         root.addView(title)
@@ -87,13 +87,11 @@ class MainActivity : Activity() {
         root.addView(regenBtn)
         setContentView(ScrollView(this).apply { addView(root) })
 
-        // 상시 알림 권한(Android 13+) — 없으면 포그라운드 알림이 숨겨질 수 있다.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
         }
-        // 프로세스를 포그라운드로 고정 — 브리지가 메모리 압박에 죽지 않게. (액티비티 포그라운드에서 시작해야 허용)
         BridgeForegroundService.start(this)
     }
 
@@ -105,22 +103,21 @@ class MainActivity : Activity() {
     private fun refresh() {
         val enabled = isListenerEnabled()
         status.text = buildString {
-            append(if (enabled) "✅ 알림 접근 허용됨\n" else "❌ 알림 접근 꺼짐 — 아래 버튼으로 켜세요\n")
-            append("브리지: 127.0.0.1:${BridgeServer.PORT} (Bearer 토큰 필요)\n")
-            append(if (NotifStore.listenerConnected) "✅ 리스너 연결됨\n" else "· 리스너 대기 중 (권한 켠 뒤 잠시)\n")
-            append(if (UiController.connected()) "✅ 접근성(화면 제어) 연결됨" else "· 접근성 꺼짐 — 화면 제어하려면 아래 버튼으로 켜세요")
+            append(if (enabled) "✅ Přístup k oznámením povolen\n" else "❌ Přístup k oznámením vypnutý. Zapni ho tlačítkem níže.\n")
+            append("Bridge: 127.0.0.1:${BridgeServer.PORT} (vyžaduje Bearer token)\n")
+            append(if (NotifStore.listenerConnected) "✅ Listener oznámení připojen\n" else "• Listener čeká na připojení\n")
+            append(if (UiController.connected()) "✅ Ovládání obrazovky připojeno" else "• Accessibility je vypnuté. Pro ovládání obrazovky ho zapni níže.")
         }
-        tokenView.text = BridgeAuth.current() ?: "(토큰 없음)"
+        tokenView.text = BridgeAuth.current() ?: "(token není k dispozici)"
     }
 
     private fun copyToken() {
         val token = BridgeAuth.current() ?: return
         getSystemService(ClipboardManager::class.java)
-            .setPrimaryClip(ClipData.newPlainText("usix companion token", token))
-        Toast.makeText(this, "복사됨 — Termux: usix-termux pair", Toast.LENGTH_SHORT).show()
+            .setPrimaryClip(ClipData.newPlainText("USIX Companion token", token))
+        Toast.makeText(this, "Token zkopírován. Teď v Termuxu spusť: usix-termux pair", Toast.LENGTH_SHORT).show()
     }
 
-    /** enabled_notification_listeners 는 ':' 로 이어진 ComponentName 목록 — 패키지명을 정확히 대조. */
     private fun isListenerEnabled(): Boolean {
         val flat = Settings.Secure.getString(contentResolver, "enabled_notification_listeners") ?: return false
         return flat.split(":").any { ComponentName.unflattenFromString(it)?.packageName == packageName }
